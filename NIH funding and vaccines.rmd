@@ -1,0 +1,69 @@
+---
+title: "NIH funding, state population, and COVID vaccination status"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+2019 population data from https://www.census.gov/newsroom/press-kits/2019/national-state-estimates.html
+
+NIH funding by state from https://reporter.nih.gov/
+
+2020 election results from https://www.cookpolitical.com/2020-national-popular-vote-tracker
+
+vaccination data from https://github.com/owid/covid-19-data/blob/master/public/data/vaccinations/us_state_vaccinations.csv
+
+## packages and data
+
+```{r,warning=FALSE,message=FALSE,eval=FALSE}
+library(ggplot2)
+
+dat = read.csv('/Users/annebozack/Downloads/nst-est2019-01.csv')
+dat = dat[!is.na(dat$funding),]
+dat$people_fully_vaccinated_per_hundred = dat$people_fully_vaccinated_per_hundred/100
+dat$fun_per_person = dat$funding/dat$pop_2019
+```
+
+## funding and population by state
+```{r, out.width = '80%', echo = F}
+cor.test(dat$pop_2019, dat$funding, method = 'spearman')
+	# Spearman's rank correlation rho
+
+# data:  dat$pop_2019 and dat$funding
+# S = 2182, p-value < 2.2e-16
+# alternative hypothesis: true rho is not equal to 0
+# sample estimates:
+      # rho 
+# 0.8952221 
+
+ggplot(dat, aes(x = pop_2019, y = funding, color = people_fully_vaccinated_per_hundred)) + 
+	geom_smooth(method = 'lm', color = 'gray', alpha = 0.1, size = 0.5) +
+	geom_point(alpha = 0.7) + theme_minimal() + 
+	labs(x = 'Population', y = 'NIH funding', title = 'Population and NIH funding by state') + 
+	scale_color_gradientn(colours = c("#ffd700", "#ffb14e", "#fa8775", "#ea5f94", "#cd34b5", "#9d02d7", "#0000ff")) + 
+	labs(colour="% fully vaccinated") + theme(legend.position="bottom") + 
+	annotate('text', label = 'r = 0.90', x = 0.5e7, y = 6.5e9, size = 4) 
+```
+
+## vaccination rate and per capital NIH funding by state
+```{r, out.width = '80%', echo = F}
+cor.test(dat$fun_per_person, dat$people_fully_vaccinated_per_hundred, method = 'spearman')
+	# Spearman's rank correlation rho
+
+# data:  dat$fun_per_person and dat$people_fully_vaccinated_per_hundred
+# S = 9184, p-value = 3.368e-05
+# alternative hypothesis: true rho is not equal to 0
+# sample estimates:
+      # rho 
+# 0.5589916 
+
+ggplot(dat, aes(x = fun_per_person, y = people_fully_vaccinated_per_hundred, color = pop_2019)) + 
+	geom_smooth(method = 'lm', color = 'gray', alpha = 0.1, size = 0.5) +
+	geom_point(alpha = 0.7) + theme_minimal() + 
+	labs(x = 'NIH funding, dollars per person', y = '% fully vaccinated', title = 'Vaccination rate and NIH funding by state') + 
+	scale_color_gradientn(colours = c("#ffd700", "#ffb14e", "#fa8775", "#ea5f94", "#cd34b5", "#9d02d7", "#0000ff")) + 
+	labs(colour="population") + theme(legend.position="bottom") + theme(legend.text=element_text(size=7)) +
+	annotate('text', label = 'r = 0.56', x = 500, y = 0.55, size = 4) 
+```
+
